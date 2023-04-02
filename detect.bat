@@ -1,6 +1,7 @@
 @echo off
 
 setlocal EnableDelayedExpansion
+REM Informacion de memoria ram
 
 set index=0
 for /f "tokens=1-4" %%a in ('wmic memorychip get Capacity^,FormFactor^,MemoryType^,Speed /format:table') do (
@@ -13,8 +14,8 @@ for /f "tokens=1-4" %%a in ('wmic memorychip get Capacity^,FormFactor^,MemoryTyp
   set /a index+=1
 )
 
-echo Información del procesador:
-echo ------------------------------------
+REM Información del procesador:
+
 for /f "tokens=1-2 delims==" %%a in ('wmic cpu get name^,NumberOfCores^,MaxClockSpeed^,Manufacturer /format:value') do (
     if "%%a"=="Manufacturer" set manufacturer=%%b
     if "%%a"=="Name" set name=%%b
@@ -22,7 +23,54 @@ for /f "tokens=1-2 delims==" %%a in ('wmic cpu get name^,NumberOfCores^,MaxClock
     if "%%a"=="MaxClockSpeed" set speed=%%b
 )
 
+REM Información de disco
 
+set count=1
+
+for /f "tokens=1-2 delims==" %%a in ('wmic diskdrive get caption^,size /format:value') do (
+  if "%%a"=="Caption" (
+    set diskCaption!count!=%%b
+  )
+  if "%%a"=="Size" (
+    set diskSize!count!=%%b
+    set /a count+=1
+  )
+)
+
+REM informacion de placa de video
+
+for /f "tokens=1-2 delims==" %%a in ('wmic path win32_VideoController get name^,adapterram^,VideoProcessor /format:list') do (
+  if "%%a"=="AdapterRAM" set videoMemory=%%b
+  if "%%a"=="Name" set videoName=%%b
+  if "%%a"=="VideoProcessor" set videoProcessor=%%b
+)
+
+REM Informacion de adaptador wi fi
+
+for /f "tokens=2 delims==" %%a in ('wmic nic where "NetEnabled='true' and PhysicalAdapter='true'" get "Name" /format:value') do set "wifi_name=%%a"
+for /f "tokens=2 delims==" %%a in ('wmic nic where "NetEnabled='true' and PhysicalAdapter='true'" get "Manufacturer" /format:value') do set "wifi_manufacturer=%%a"
+
+echo Informacion de wi fi 
+echo --------------------------------
+echo Nombre de la placa Wi-Fi: %wifi_name%
+echo Fabricante de la placa Wi-Fi: %wifi_manufacturer%
+
+echo Información de la placa de video:
+echo ------------------------------------
+echo Nombre: %videoName%
+echo Memoria de video: %videoMemory% bytes
+echo Procesador de video: %videoProcessor%
+echo ..............................
+
+echo Información del disco 1:
+echo --------------------------
+echo Marca: %diskCaption1%
+echo Tamaño: %diskSize1%
+
+echo Información del disco 2:
+echo --------------------------
+echo Marca: %diskCaption2%
+echo Tamaño: %diskSize2%
 
 set RAM_Count=%index%
 
