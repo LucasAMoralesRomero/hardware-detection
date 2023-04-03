@@ -50,6 +50,20 @@ REM Informacion de adaptador wi fi
 for /f "tokens=2 delims==" %%a in ('wmic nic where "NetEnabled='true' and PhysicalAdapter='true'" get "Name" /format:value') do set "wifi_name=%%a"
 for /f "tokens=2 delims==" %%a in ('wmic nic where "NetEnabled='true' and PhysicalAdapter='true'" get "Manufacturer" /format:value') do set "wifi_manufacturer=%%a"
 
+REM ver si tiene placa bt
+REM si hay placa, uarda la informacion en las variables bluetoothManufacturer y bluetoothName, sino guarda 0 en las variables
+for /f "tokens=3" %%a in ('reg query HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\bthport /v Start ^| findstr "REG_DWORD"') do set bluetooth=%%a
+
+if "%bluetooth%"=="2" (
+    for /f "tokens=2 delims== " %%a in ('wmic path win32_pnpentity where "deviceid like '%%BTHENUM%%'" get manufacturer /format:list ^| findstr /i "manufacturer"') do set "bluetoothManufacturer=%%a"
+    for /f "tokens=2 delims== " %%a in ('wmic path win32_pnpentity where "deviceid like '%%BTHENUM%%'" get name /format:list ^| findstr /i "name"') do set "bluetoothName=%%a"
+    echo Tienes una placa Bluetooth instalada.
+) else (
+    set bluetoothManufacturer=0
+    set bluetoothName=0
+    echo manufacturer !bluetoothManufacturer! name !bluetoothName!
+)
+echo --------------------
 echo Informacion de wi fi 
 echo --------------------------------
 echo Nombre de la placa Wi-Fi: %wifi_name%
