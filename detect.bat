@@ -57,52 +57,56 @@ for /f "tokens=3" %%a in ('reg query HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet
 if "%bluetooth%"=="2" (
     for /f "tokens=2 delims== " %%a in ('wmic path win32_pnpentity where "deviceid like '%%BTHENUM%%'" get manufacturer /format:list ^| findstr /i "manufacturer"') do set "bluetoothManufacturer=%%a"
     for /f "tokens=2 delims== " %%a in ('wmic path win32_pnpentity where "deviceid like '%%BTHENUM%%'" get name /format:list ^| findstr /i "name"') do set "bluetoothName=%%a"
-    echo Tienes una placa Bluetooth instalada.
 ) else (
     set bluetoothManufacturer=0
     set bluetoothName=0
-    echo manufacturer !bluetoothManufacturer! name !bluetoothName!
 )
-echo --------------------
-echo Informacion de wi fi 
-echo --------------------------------
-echo Nombre de la placa Wi-Fi: %wifi_name%
-echo Fabricante de la placa Wi-Fi: %wifi_manufacturer%
 
-echo Información de la placa de video:
-echo ------------------------------------
-echo Nombre: %videoName%
-echo Memoria de video: %videoMemory% bytes
-echo Procesador de video: %videoProcessor%
-echo ..............................
+REM informacion del sistema operativo
+for /f "usebackq tokens=4 delims=] " %%a in (`ver`) do set versionOS=%%a
 
-echo Información del disco 1:
-echo --------------------------
-echo Marca: %diskCaption1%
-echo Tamaño: %diskSize1%
+REM creacion del JSON
 
-echo Información del disco 2:
-echo --------------------------
-echo Marca: %diskCaption2%
-echo Tamaño: %diskSize2%
+set "json={"
 
-set RAM_Count=%index%
+set "json=!json!"version_SO":"%versionOS%","
 
-echo Información de la memoria RAM:
-echo ------------------------------------
+set "json=!json!"wi_fi_nombre":"%wifi_name%","
+set "json=!json!"wi_fi_fabricante":"%wifi_manufacturer%","
+
+set "json=!json!"bluetooth_nombre":"%bluetoothName%","
+set "json=!json!"bluetooth_fabricante":"%bluetoothManufacturer%","
+
+set "json=!json!"video_nombre":"%videoName%","
+set "json=!json!"video_memoria":"%videoMemory% bytes","
+set "json=!json!"video_procesador":"%videoProcessor%","
+
+set "json=!json!"disco1_marca":"%diskCaption1%","
+set "json=!json!"disco1_tamaño":"%diskSize1%","
+
+set "json=!json!"disco2_marca":"%diskCaption2%","
+set "json=!json!"disco2_tamaño":"%diskSize2%","
+
+set "json=!json!"procesador_fabricante":"%manufacturer%","
+set "json=!json!"procesador_modelo":"%name%","
+set "json=!json!"procesador_núcleos":"%cores%","
+set "json=!json!"procesador_velocidad":"%speed% MHz","
+
+set "json=!json!"memoria_ram": ["
+set RAM_Count=%index%.
 for /l %%i in (1,1,%RAM_Count%) do (
-  echo Módulo [%%i]:
-  echo Capacidad: !RAM_Capacity[%%i]! bytes
-  echo Factor de forma: !RAM_FormFactor[%%i]!
-  echo Tipo de memoria: !RAM_MemoryType[%%i]!
-  echo Velocidad: !RAM_Speed[%%i]! MHz
-  echo.
+  set "json=!json!{"
+  set "json=!json!"capacidad":"!RAM_Capacity[%%i]! bytes","
+  set "json=!json!"factor_forma":"!RAM_FormFactor[%%i]!","
+  set "json=!json!"tipo_memoria":"!RAM_MemoryType[%%i]!","
+  set "json=!json!"velocidad":"!RAM_Speed[%%i]!""
+  set "json=!json!},"
 )
 
-echo info de procesador
-echo Fabricante: %manufacturer%
-echo Modelo: %name%
-echo Número de núcleos: %cores%
-echo Velocidad: %speed% MHz
+rem quitar la coma extra al final del último elemento de la lista de memoria RAM
+set "json=!json:~0,-1!"
 
-pause
+set "json=!json!]"
+set "json=!json!}"
+
+echo %json% > hardware.json
